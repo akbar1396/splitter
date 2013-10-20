@@ -1,0 +1,83 @@
+#! /bin/sh
+
+echo "Welcome to the Splitter V2.0\n"
+
+############# Unix merger script #############
+function createUnixMerger(){
+cat > $1/unix_merger <<EOF
+#!/bin/sh
+#This is UNIX merger
+#cd to this folder and run ./unix_merger
+
+filename="$2"
+count=1
+numfiles=\$(( \`ls "\$filename"* | wc -l\` ))
+
+echo "Welcome to Merger v2.2\\n\\tThere are \$numfiles files to merge.\\n\\tIt should take about \$((\$numfiles * 10)) minutes.."
+
+if [ -s "\$filename" ]
+then
+	echo "ERROR!\\tIt seems, that merged file exist. You have to (re)move it to try again."
+	exit
+fi
+
+for file in "\$filename"*
+do
+	if [ "\$file" != "\$filename" ]
+	then
+		echo "[\$count of \$numfiles]\\t$file"
+		cat -u < \$file >> \$filename
+		count=\$((\$count + 1))
+	fi
+done
+
+if [ "\$1" = "-r" ]
+then
+	count=1
+	echo ">\\tOriginal files are going to be deleted."
+	for file in "$filename"*
+	do
+		if [ "\$file" != "\$filename" ]
+		then
+			echo "[\$count of \$numfiles]\\t$file"
+			rm \$file
+			count=\$((\$count + 1))
+		fi
+	done
+	exit
+fi
+EOF
+
+chmod +x $1/unix_merger
+}
+
+############# Split file function #############
+function splitFile(){
+	fileToSplit="$1"
+	outputfileName=${1##*/}
+
+	if [ -z $2 ]
+	then
+		thisPath=`pwd`
+		outputSplitPath="$thisPath/$outputfileName.splitted/"
+	else
+		outputSplitPath="$2$outputfileName.splitted"
+	fi
+
+	output="$outputSplitPath/$outputfileName"
+
+	echo "FILENAME: $outputfileName"
+
+	echo ">\tInput file is: $1"
+	echo ">\tOutput dir is: $outputSplitPath"
+	
+	mkdir $outputSplitPath
+	split -b 4300m $1 $output
+
+	createUnixMerger $outputSplitPath $outputfileName
+
+	echo "DONE"
+}
+
+############# Main script #############
+splitFile $1 $2
